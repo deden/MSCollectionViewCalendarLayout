@@ -1221,6 +1221,28 @@ NSUInteger const MSCollectionMinBackgroundZ = 0.0;
     NSDate *date = [self.delegate collectionView:self.collectionView layout:self endTimeForItemAtIndexPath:indexPath];
     NSDateComponents *itemEndTime = [[NSCalendar currentCalendar] components:(NSDayCalendarUnit | NSHourCalendarUnit | NSMinuteCalendarUnit) fromDate:date];
     
+    
+    NSDate *startDate = [self.delegate collectionView:self.collectionView layout:self startTimeForItemAtIndexPath:indexPath];
+    
+    NSDate * nextDST = [[NSTimeZone systemTimeZone] nextDaylightSavingTimeTransitionAfterDate:startDate];
+    if (
+        ([startDate compare:nextDST] == NSOrderedAscending || [startDate compare:nextDST] == NSOrderedSame)
+        &&
+        ([date compare:nextDST] == NSOrderedDescending || [date compare:nextDST] == NSOrderedSame)
+        
+        ) {
+        
+        NSDateComponents *itemStartTime = [self startTimeForIndexPath:indexPath];
+        NSDateComponents * fixedEndTime = [[NSCalendar currentCalendar] components:(NSDayCalendarUnit | NSHourCalendarUnit | NSMinuteCalendarUnit) fromDate:startDate toDate:date options:0];
+        
+        NSDateComponents *dateComponents = [[NSDateComponents alloc] init];
+        [dateComponents setDay:itemStartTime.day + fixedEndTime.day];
+        [dateComponents setHour:itemStartTime.hour + fixedEndTime.hour];
+        [dateComponents setMinute:itemStartTime.minute + fixedEndTime.minute];
+        
+        itemEndTime = dateComponents;
+    }
+        
     [self.cachedEndTimeDateComponents setObject:itemEndTime forKey:indexPath];
     return itemEndTime;
 }
